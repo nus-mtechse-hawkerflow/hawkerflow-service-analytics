@@ -1,13 +1,18 @@
 # Wiring the hawker dashboard to this service
 
-For whoever owns `hawker-ui`. This service is finished and tested; the frontend
-side is deliberately left for you, because the analytics screen is yours.
+**The integration is done** and verified end to end on 2026-09-27: the hawker
+dashboard reads its figures from this service. The work is on the `hawker-ui`
+branch `analytics-integration`.
 
-## What changes on your side
+This document describes the contract and explains what changed, so the next
+person to touch the analytics screen knows what it now depends on. If you are
+reviewing that branch, the "What changed" section below is the summary.
 
-`hawker-ui`'s analytics screen currently computes its figures in the browser,
-from `OrderService.orders`. Those numbers are derived from whatever orders
-happen to be loaded in the tab, and four of them are not real:
+## What changed on the dashboard
+
+`hawker-ui`'s analytics screen used to compute its figures in the browser from
+`OrderService.orders`. Those numbers came from whatever orders happened to be
+loaded in the tab, and four of them were not real:
 
 | Card today | Reality |
 |---|---|
@@ -82,10 +87,12 @@ Three things to build against:
 | 422 | Invalid stall id or date | Validate before sending. |
 | 503 | Database unavailable | Show an error with a Retry button. **Never fall back to browser figures.** |
 
-## Suggested Angular shape
+## How the Angular side is built
 
-Return an `Observable`, not a `Promise`, so a slow response for a previously
-selected stall cannot overwrite the current one:
+`AnalyticsApiService` returns an `Observable`, not a `Promise` — unlike
+`OrderApiService` — so `AnalyticsService` can cancel a stale request with
+`switchMap`. Without that, a slow response for a previously selected stall or
+date can overwrite the figures currently on screen.
 
 ```typescript
 @Injectable({ providedIn: 'root' })
@@ -116,10 +123,22 @@ this.requests.pipe(
 ## Stall ids
 
 The frontend uses string keys (`stall-ah-huat`); this service takes the backend
-integer. `StallAccount.numericId` already exists in `auth.model.ts`. Use an
-explicit configured mapping — **never infer an id from array position, and never
-fall back to stall 1**, or one stall will silently show another's takings. A
-stall with no configured id should show a setup message.
+integer. The id is read from `StallAccount.numericId`, falling back to the
+session's `numericStallId`. Both come from `backendStall.stall_id`, so neither
+is a guess.
+
+The session fallback matters because `AuthService.currentStall` resolves against
+`allStalls()`, which is filled only by a fetch from the hawker service. With
+that service down, `currentStall()` is null even for a validly signed-in user,
+and analytics needs nothing else from it.
+
+With neither id present the screen shows a setup message. It **never infers an
+id from array position and never falls back to stall 1** — that would silently
+show one stall another stall's takings.
+
+An earlier draft of this document proposed a hardcoded key-to-id map in
+`environment.ts`. That was dropped: `numericId` is populated from the backend at
+login, so a configured map would be a strictly worse source of truth.
 
 ## What feeds it
 
@@ -146,6 +165,38 @@ To get numbers to look at:
 ```bash
 python scripts/seed_sample_orders.py --stall 1 --orders 5
 ```
+
+## Verified
+
+Checked against the running stack on 2026-09-27, stall 1 on 2026-09-26:
+
+- The dashboard shows $63.30 across 5 completed orders, matching the same
+  figures computed directly in SQL, and the top-dish values sum to the total —
+  so dish rows are not double-counted.
+- The figures appear on navigating to the screen, without first visiting KDS or
+  Orders. That was the original defect: the screen never fetched anything.
+- A day with no orders shows zeros and "No completed orders", not an error.
+- With the analytics service stopped, Refresh shows an error and a Retry
+  button, and **no figures at all** — no stale values linger and nothing falls
+  back to browser-computed numbers. Retry recovers once the service returns.
+- Another stall does not see stall 1's takings.
+
+## Two defects found and fixed along the way
+
+Both in `hawker-ui`, both outside analytics, both on the same branch:
+
+- **The analytics screen never fetched.** It read whatever `OrderService`
+  already held, which is empty on load, so it showed zeros unless the user had
+  visited KDS or Orders first.
+- **Backend-registered stalls could not sign in.**
+  `mapBackendStallToAccount` left `username` undefined and discarded the
+  owner's email, while the local login matched only on `username`. No typed
+  value could ever match, so registering a stall through the hawker service
+  produced an account nobody could use.
+
+Related: the hawker service stores no credentials at all, so the local login
+accepts any password for a backend-registered stall. That is tolerable on a
+loopback development stack and must not reach a deployed environment.
 
 ## Questions
 

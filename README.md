@@ -8,9 +8,14 @@ role and writes nothing, anywhere. It is the backend for the analytics screen in
 
 ## Status
 
-Local milestone. Runs on `127.0.0.1:8083` against a local PostgreSQL instance.
+Working and integrated. Runs on `127.0.0.1:8083` against a local PostgreSQL
+instance, and the hawker dashboard reads its figures from it — verified end to
+end on 2026-09-27 against the running stack, with the API's numbers matching
+SQL exactly. The frontend side lives on the `hawker-ui` branch
+`analytics-integration`.
+
 AWS deployment, Lambda packaging, Cognito and event-driven aggregation are
-deliberately out of scope for now — see [Deferred](#deferred).
+deliberately out of scope — see [Deferred](#deferred).
 
 ## The endpoint
 
