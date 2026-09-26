@@ -166,7 +166,12 @@ def test_mismatched_identity_header_returns_403():
 
 
 def test_database_failure_returns_503_and_leaks_nothing():
-    error = OperationalError("SELECT 1", {}, Exception("password=REDACTED_LOCAL_DEV_PASSWORD connection refused"))
+    # SQLAlchemy exception text routinely carries the connection string.
+    # This sentinel stands in for a real password; it must not reach the client.
+    secret = "s3cr3t-must-not-escape"
+    error = OperationalError(
+        "SELECT 1", {}, Exception(f"password={secret} connection refused")
+    )
     client = build_client(StubRepo(error=error))
 
     response = client.get(
@@ -175,7 +180,7 @@ def test_database_failure_returns_503_and_leaks_nothing():
 
     assert response.status_code == 503
     body = response.text
-    assert "REDACTED_LOCAL_DEV_PASSWORD" not in body
+    assert secret not in body
     assert "password" not in body.lower()
     assert "retry" in response.json()["detail"].lower()
 

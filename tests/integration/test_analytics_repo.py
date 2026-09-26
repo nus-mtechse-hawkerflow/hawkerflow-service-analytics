@@ -6,10 +6,11 @@ it created, and seeds under a stall id no sample data uses, so these never
 disturb demo rows or each other.
 """
 
+import os
 from datetime import date, datetime
 
 import pytest
-from sqlalchemy import create_engine, text
+from sqlalchemy import URL, create_engine, text
 
 from configurations.app_config import AppConfig
 from repository.analytics_repo import AnalyticsRepo
@@ -19,7 +20,15 @@ from session.db_session import DBSession
 SEED_STALL = 9001
 OTHER_STALL = 9002
 
-ADMIN_URL = "postgresql+psycopg2://hawkerflow:REDACTED_LOCAL_DEV_PASSWORD@localhost:5432/hawkerflow_order_db"
+# The fixture writer needs the setup role, which the runtime role is not.
+# Read it from the environment: no credential is committed, so the public
+# repository stays free of secrets and the gitleaks CI job stays green.
+# See docs/RUN_LOCALLY.md for how to set it.
+ADMIN_USER = os.getenv("ANALYTICS_TEST_ADMIN_USER", "hawkerflow")
+ADMIN_PASSWORD = os.getenv("ANALYTICS_TEST_ADMIN_PASSWORD")
+ADMIN_DB = os.getenv("ANALYTICS_TEST_ADMIN_DB", "hawkerflow_order_db")
+ADMIN_HOST = os.getenv("ANALYTICS_TEST_ADMIN_HOST", "localhost")
+ADMIN_PORT = int(os.getenv("ANALYTICS_TEST_ADMIN_PORT", "5432"))
 
 
 @pytest.fixture(scope="module")
@@ -30,7 +39,23 @@ def ro_engine():
 @pytest.fixture(scope="module")
 def admin_engine():
     """Fixture-only writer. Never used by service code."""
-    return create_engine(ADMIN_URL)
+    if not ADMIN_PASSWORD:
+        pytest.skip(
+            "ANALYTICS_TEST_ADMIN_PASSWORD is not set. These tests need the "
+            "setup role to seed rows, because the runtime role is read-only. "
+            "See docs/RUN_LOCALLY.md."
+        )
+
+    return create_engine(
+        URL.create(
+            "postgresql+psycopg2",
+            ADMIN_USER,
+            ADMIN_PASSWORD,
+            ADMIN_HOST,
+            ADMIN_PORT,
+            ADMIN_DB,
+        )
+    )
 
 
 @pytest.fixture

@@ -47,8 +47,15 @@ python -m venv .venv
 
 SCRATCH=/tmp/order-root
 mkdir -p "$SCRATCH/vault" "$SCRATCH/resources"
-printf 'hawkerflow'  > "$SCRATCH/vault/postgres.user"
-printf 'REDACTED_LOCAL_DEV_PASSWORD' > "$SCRATCH/vault/postgres.password"
+
+# Read the container's own credentials rather than writing them down here.
+docker inspect hawkerflow-postgres \
+  --format '{{range .Config.Env}}{{println .}}{{end}}' | grep '^POSTGRES_USER=' \
+  | cut -d= -f2- | tr -d '\n' > "$SCRATCH/vault/postgres.user"
+docker inspect hawkerflow-postgres \
+  --format '{{range .Config.Env}}{{println .}}{{end}}' | grep '^POSTGRES_PASSWORD=' \
+  | cut -d= -f2- | tr -d '\n' > "$SCRATCH/vault/postgres.password"
+
 sed -e 's/^\(  enabled:\) true/\1 false/' resources/config.yml > "$SCRATCH/resources/config.yml"
 
 PROJECT_ROOT="$SCRATCH" PYTHONPATH=src .venv/Scripts/python -c "
@@ -123,6 +130,24 @@ PROJECT_ROOT=. .venv/Scripts/python -m pytest tests/integration/test_readonly_ro
 
 Expected: 8 passed, including four tests asserting that INSERT, UPDATE, DELETE
 and CREATE TABLE are all denied.
+
+### Running the repository integration tests
+
+`tests/integration/test_analytics_repo.py` seeds rows to query back, which the
+runtime role deliberately cannot do. It needs the setup role, supplied through
+the environment so that no credential is committed to this repository:
+
+```bash
+export ANALYTICS_TEST_ADMIN_PASSWORD=$(docker inspect hawkerflow-postgres \
+  --format '{{range .Config.Env}}{{println .}}{{end}}' \
+  | grep '^POSTGRES_PASSWORD=' | cut -d= -f2-)
+
+PROJECT_ROOT=. .venv/Scripts/python -m pytest tests/integration -v
+```
+
+Without that variable the repository tests skip with an explanatory message
+rather than failing. `ANALYTICS_TEST_ADMIN_USER`, `_HOST`, `_PORT` and `_DB`
+override the defaults if your local setup differs.
 
 ## 5. Configuration
 

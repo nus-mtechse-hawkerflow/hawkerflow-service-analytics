@@ -21,4 +21,5 @@ def test_health_response_carries_no_credentials():
     body = build_client().get("/health").text.lower()
 
     assert "password" not in body
-    assert "REDACTED_LOCAL_DEV_PASSWORD" not in body
+    assert "postgres" not in body
+    assert "@" not in body
