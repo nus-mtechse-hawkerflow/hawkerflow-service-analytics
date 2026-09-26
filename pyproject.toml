@@ -25,3 +25,13 @@ known-first-party = [
   "repository",
   "session",
 ]
+
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI's dependency injection is declared in argument defaults by design.
+# B008 is a false positive for these.
+extend-immutable-calls = [
+  "fastapi.Depends",
+  "fastapi.Query",
+  "fastapi.Path",
+  "fastapi.Header",
+]
