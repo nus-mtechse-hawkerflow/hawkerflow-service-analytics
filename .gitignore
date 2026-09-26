@@ -6,3 +6,7 @@ __pycache__/
 vault/
 resources/config.local.yml
 database.db
+
+# Internal design notes: kept locally, deliberately not published.
+docs/specs/
+docs/plans/
