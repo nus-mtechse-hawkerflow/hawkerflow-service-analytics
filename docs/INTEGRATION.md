@@ -15,10 +15,24 @@ happen to be loaded in the tab, and four of them are not real:
 | Payment breakdown (PayNow/cash/NETS/card) | The order schema stores no payment method. |
 | Takeaway fees | Not captured on orders. |
 | Shift Close Z-Report | There is no shift record. |
-| Gross Sales | Sums `orders.f_total_price` — the **whole** order, so a multi-stall order inflates this stall's sales. |
 
-This service replaces the first four with an explicit "not available" list, and
-fixes the fifth by summing `stall_orders.f_subtotal` instead.
+Two of those are worth spelling out, because the screen looks convincing.
+
+`OrderService.backendToFrontendOrder` hardcodes `paymentMethod: 'paynow'` and
+`takeawayFee: 0` on every order it builds from the backend — the DTO has no such
+fields. So the payment breakdown reads **100% PayNow** for every stall, every
+day, and takeaway fees read `$0.00`. Neither is a measurement; both are defaults
+being charted. `avgPrepTimeMins` falls back to a literal `4.2` when no
+timestamps exist, which is always.
+
+**Gross Sales is correct** and this service does not change how it is computed.
+`getStallOrders` returns stall-level `subtotal`, so the figure is already scoped
+to one stall.
+
+The real limitation is scope, not arithmetic: everything is derived from
+`OrderService.orders`, the orders loaded in that browser tab. Refresh and the
+shift summary is whatever reloads. This service computes the same figures in
+PostgreSQL instead, so they persist and are identical on every device.
 
 ## The endpoint
 
