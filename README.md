@@ -145,3 +145,7 @@ architecture from before the team split into per-service repositories on FastAPI
 and PostgreSQL. One idea from it is worth keeping — it stored money as integer
 cents, which removes the rounding question entirely, and is the better answer if
 the order schema is ever migrated.
+
+## Integration
+
+Wiring this into the hawker dashboard: see [docs/INTEGRATION.md](docs/INTEGRATION.md).
