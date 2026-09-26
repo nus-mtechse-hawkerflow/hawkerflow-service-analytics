@@ -1,0 +1,8 @@
+# Copy to config.local.yml and fill in. config.local.yml is gitignored.
+# Credentials themselves belong in vault/postgres.user and vault/postgres.password,
+# which are also gitignored. Never commit real values.
+datasource:
+  database:
+    host: 'localhost'
+    port: 5432
+    name: 'hawkerflow_order_db'

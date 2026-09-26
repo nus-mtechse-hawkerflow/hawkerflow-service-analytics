@@ -1,0 +1,27 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+exclude = [".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B"]
+
+[tool.ruff.lint.isort]
+# src/ is on the path directly, so these import as top-level packages.
+known-first-party = [
+  "analytics",
+  "configurations",
+  "dependencies",
+  "drivers",
+  "endpoints",
+  "entities",
+  "factory",
+  "lifecycle",
+  "models",
+  "repository",
+  "session",
+]
