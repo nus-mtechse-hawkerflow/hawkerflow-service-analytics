@@ -6,3 +6,5 @@ PyYAML==6.0.3
 SQLAlchemy==2.0.53
 sqlmodel==0.0.42
 psycopg2==2.9.13
+# Windows and slim Linux images ship no system tz database; zoneinfo needs this.
+tzdata==2026.4
