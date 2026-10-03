@@ -1,12 +1,12 @@
 service:
   title: HawkerFlow Service Analytics
-  root_path: '/hawkerflow'
-  port: 8083
-  host: '127.0.0.1'
+  root_path: '/analytics'
+  port: 8080
+  host: '0.0.0.0'
   allow_origins:
-    - 'http://localhost:4200'
+    - '*'
   methods:
-    - 'GET'
+    - '*'
   headers:
     - 'X-Stall-ID'
     - 'Content-Type'
@@ -20,8 +20,5 @@ datasource:
     driver_class: "PostgresDriver"
   database:
     driver_name: 'postgresql+psycopg2'
-    name: 'hawkerflow_order_db'
-    host: 'localhost'
-    port: 5432
   options:
     echo: false
