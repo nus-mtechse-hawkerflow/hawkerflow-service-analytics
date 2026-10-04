@@ -30,7 +30,7 @@ def singapore_day_bounds_utc(day: date) -> tuple[datetime, datetime]:
     :param day: the Singapore calendar date
     :return: (start, end) as naive UTC datetimes
     """
-    start_local = datetime(day.year, day.month, day.day, tzinfo=UTC)
+    start_local = datetime(day.year, day.month, day.day, tzinfo=SINGAPORE)
     end_local = start_local + timedelta(days=1)
 
     return (
@@ -41,7 +41,7 @@ def singapore_day_bounds_utc(day: date) -> tuple[datetime, datetime]:
 
 def singapore_today() -> date:
     """Today's date on the Singapore calendar, whatever the server's timezone."""
-    return datetime.now(UTC).date()
+    return datetime.now(SINGAPORE).date()
 
 
 def to_singapore_hour(stored_utc: datetime) -> int:
@@ -54,4 +54,4 @@ def to_singapore_hour(stored_utc: datetime) -> int:
     if stored_utc.tzinfo is None:
         stored_utc = stored_utc.replace(tzinfo=UTC)
 
-    return stored_utc.astimezone(UTC).hour
+    return stored_utc.astimezone(SINGAPORE).hour

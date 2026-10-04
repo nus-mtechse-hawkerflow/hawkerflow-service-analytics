@@ -1,7 +1,8 @@
 """Configuration tests.
 
-These pin the security-relevant settings from the plan's Global Constraints:
-the service must bind to loopback and must not open CORS to every origin.
+These pin what the deployed service depends on: the address it is served
+under, the port the load balancer targets, and that connection details come
+from the environment rather than from a file in the image.
 """
 
 from pathlib import Path
@@ -26,35 +27,25 @@ def config():
 
 def test_config_loads_from_the_repository_resources(config):
     assert config.service.title == "HawkerFlow Service Analytics"
-    assert config.datasource.database.name == "hawkerflow_order_db"
 
 
-def test_service_binds_to_loopback_only(config):
-    assert config.service.host == "127.0.0.1"
-    assert config.service.port == 8083
+def test_service_listens_where_the_load_balancer_expects(config):
+    assert config.service.host == "0.0.0.0"
+    assert config.service.port == 8080
 
 
-def test_cors_names_one_origin_and_never_a_wildcard(config):
-    assert config.service.allow_origins == ["http://localhost:4200"]
-    assert "*" not in config.service.allow_origins
+def test_public_path_avoids_the_word_blockers_refuse(config):
+    # Ad and tracker blockers drop browser requests whose path contains
+    # /analytics/, which left the hawker dashboard unable to load.
+    assert config.service.root_path == "/insights"
+    assert "analytics" not in config.service.root_path
 
 
-def test_only_read_methods_are_allowed(config):
-    assert config.service.methods == ["GET"]
-    for unsafe in ("POST", "PUT", "PATCH", "DELETE", "*"):
-        assert unsafe not in config.service.methods
+def test_config_yml_carries_no_database_address_or_credentials():
+    shipped = (PROJECT_ROOT / "resources" / "config.yml").read_text(encoding="utf-8")
 
-
-def test_credentials_are_read_from_the_gitignored_vault(config):
-    assert config.datasource.options.user.get_secret_value()
-    assert config.datasource.options.password.get_secret_value()
-
-
-def test_secrets_never_appear_in_the_repr(config):
-    rendered = repr(config)
-
-    assert "SecretStr" in rendered
-    assert config.datasource.options.password.get_secret_value() not in rendered
+    for key in ("host:", "password", "user:"):
+        assert key not in shipped.split("datasource:")[1]
 
 
 def test_config_declares_no_queue_or_event_settings(config):

@@ -42,7 +42,7 @@ PostgreSQL instead, so they persist and are identical on every device.
 ## The endpoint
 
 ```
-GET http://localhost:8083/hawkerflow/v1/analytics/stalls/{stallId}/summary?date=YYYY-MM-DD
+GET http://localhost:8083/insights/v1/insights/stalls/{stallId}/summary?date=YYYY-MM-DD
 Header: X-Stall-ID: {stallId}      # must match the path
 ```
 
@@ -102,7 +102,7 @@ export class AnalyticsApiService {
 
   getStallDaySummary(stallId: number, isoDate: string): Observable<StallDaySummary> {
     return this.http.get<StallDaySummary>(
-      `${this.baseUrl}/v1/analytics/stalls/${stallId}/summary`,
+      `${this.baseUrl}/v1/insights/stalls/${stallId}/summary`,
       {
         headers: new HttpHeaders().set('X-Stall-ID', String(stallId)),
         params: new HttpParams().set('date', isoDate),
@@ -157,7 +157,7 @@ Sanity check without the UI:
 
 ```bash
 curl -s -H "X-Stall-ID: 1" \
-  "http://127.0.0.1:8083/hawkerflow/v1/analytics/stalls/1/summary" | python -m json.tool
+  "http://127.0.0.1:8083/insights/v1/insights/stalls/1/summary" | python -m json.tool
 ```
 
 To get numbers to look at:

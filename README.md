@@ -20,7 +20,7 @@ deliberately out of scope — see [Deferred](#deferred).
 ## The endpoint
 
 ```
-GET /hawkerflow/v1/analytics/stalls/{stall_id}/summary?date=YYYY-MM-DD
+GET /insights/v1/insights/stalls/{stall_id}/summary?date=YYYY-MM-DD
 ```
 
 `date` defaults to today's Singapore calendar date. The `X-Stall-ID` header must

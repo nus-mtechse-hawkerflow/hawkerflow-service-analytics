@@ -1,6 +1,7 @@
 service:
   title: HawkerFlow Service Analytics
-  root_path: '/analytics'
+  # Not '/analytics': ad and tracker blockers refuse requests to that path
+  root_path: '/insights'
   port: 8080
   host: '0.0.0.0'
   allow_origins:

@@ -12,7 +12,7 @@ from repository.analytics_repo import AnalyticsRepo
 
 logger = logging.getLogger("hawkerflow-analytics.routes")
 
-analytics_router = APIRouter(prefix="/v1/analytics")
+analytics_router = APIRouter(prefix="/v1/insights")
 
 
 def get_repo(request: Request) -> AnalyticsRepo:

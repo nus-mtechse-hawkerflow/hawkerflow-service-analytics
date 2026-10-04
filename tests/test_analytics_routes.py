@@ -60,7 +60,7 @@ def test_summary_returns_the_full_contract():
     client = build_client(StubRepo([partition()], items))
 
     response = client.get(
-        "/v1/analytics/stalls/1/summary", params={"date": "2026-09-26"}, headers=headers(1)
+        "/v1/insights/stalls/1/summary", params={"date": "2026-09-26"}, headers=headers(1)
     )
 
     assert response.status_code == 200
@@ -88,7 +88,7 @@ def test_a_stall_with_no_orders_returns_zeros_and_status_200():
     client = build_client(StubRepo([], []))
 
     response = client.get(
-        "/v1/analytics/stalls/7/summary", params={"date": "2026-09-26"}, headers=headers(7)
+        "/v1/insights/stalls/7/summary", params={"date": "2026-09-26"}, headers=headers(7)
     )
 
     assert response.status_code == 200
@@ -105,7 +105,7 @@ def test_a_stall_with_no_orders_returns_zeros_and_status_200():
 def test_date_defaults_to_singapore_today_when_omitted():
     client = build_client(StubRepo([], []))
 
-    response = client.get("/v1/analytics/stalls/1/summary", headers=headers(1))
+    response = client.get("/v1/insights/stalls/1/summary", headers=headers(1))
 
     assert response.status_code == 200
     assert response.json()["date"] == singapore_today().isoformat()
@@ -116,7 +116,7 @@ def test_invalid_dates_return_422(bad_date):
     client = build_client(StubRepo())
 
     response = client.get(
-        "/v1/analytics/stalls/1/summary", params={"date": bad_date}, headers=headers(1)
+        "/v1/insights/stalls/1/summary", params={"date": bad_date}, headers=headers(1)
     )
 
     assert response.status_code == 422
@@ -127,7 +127,7 @@ def test_invalid_stall_ids_return_422(bad_stall):
     client = build_client(StubRepo())
 
     response = client.get(
-        f"/v1/analytics/stalls/{bad_stall}/summary", headers={"X-Stall-ID": bad_stall}
+        f"/v1/insights/stalls/{bad_stall}/summary", headers={"X-Stall-ID": bad_stall}
     )
 
     assert response.status_code == 422
@@ -136,7 +136,7 @@ def test_invalid_stall_ids_return_422(bad_stall):
 def test_missing_identity_header_returns_401():
     client = build_client(StubRepo())
 
-    response = client.get("/v1/analytics/stalls/1/summary")
+    response = client.get("/v1/insights/stalls/1/summary")
 
     assert response.status_code == 401
 
@@ -144,7 +144,7 @@ def test_missing_identity_header_returns_401():
 def test_blank_identity_header_returns_401():
     client = build_client(StubRepo())
 
-    response = client.get("/v1/analytics/stalls/1/summary", headers={"X-Stall-ID": "   "})
+    response = client.get("/v1/insights/stalls/1/summary", headers={"X-Stall-ID": "   "})
 
     assert response.status_code == 401
 
@@ -152,7 +152,7 @@ def test_blank_identity_header_returns_401():
 def test_malformed_identity_header_returns_401():
     client = build_client(StubRepo())
 
-    response = client.get("/v1/analytics/stalls/1/summary", headers={"X-Stall-ID": "not-a-number"})
+    response = client.get("/v1/insights/stalls/1/summary", headers={"X-Stall-ID": "not-a-number"})
 
     assert response.status_code == 401
 
@@ -160,7 +160,7 @@ def test_malformed_identity_header_returns_401():
 def test_mismatched_identity_header_returns_403():
     client = build_client(StubRepo())
 
-    response = client.get("/v1/analytics/stalls/1/summary", headers=headers(2))
+    response = client.get("/v1/insights/stalls/1/summary", headers=headers(2))
 
     assert response.status_code == 403
 
@@ -175,7 +175,7 @@ def test_database_failure_returns_503_and_leaks_nothing():
     client = build_client(StubRepo(error=error))
 
     response = client.get(
-        "/v1/analytics/stalls/1/summary", params={"date": "2026-09-26"}, headers=headers(1)
+        "/v1/insights/stalls/1/summary", params={"date": "2026-09-26"}, headers=headers(1)
     )
 
     assert response.status_code == 503
@@ -189,7 +189,7 @@ def test_a_database_failure_never_returns_partial_figures():
     error = OperationalError("SELECT 1", {}, Exception("gone"))
     client = build_client(StubRepo(partitions=[partition()], error=error))
 
-    response = client.get("/v1/analytics/stalls/1/summary", headers=headers(1))
+    response = client.get("/v1/insights/stalls/1/summary", headers=headers(1))
 
     assert response.status_code == 503
     assert "completedOrderValue" not in response.text
