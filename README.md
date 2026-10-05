@@ -2,20 +2,20 @@
 
 Per-stall daily order statistics for the HawkerFlow hawker dashboard.
 
-This service reads the order service's PostgreSQL database through a SELECT-only
-role and writes nothing, anywhere. It is the backend for the analytics screen in
+This service reads the order tables in the shared PostgreSQL database and writes
+nothing, anywhere. It is the backend for the analytics screen in
 `hawker-ui`, which previously computed its figures from in-browser order state.
 
 ## Status
 
-Working and integrated. Runs on `127.0.0.1:8083` against a local PostgreSQL
-instance, and the hawker dashboard reads its figures from it — verified end to
-end on 2026-09-27 against the running stack, with the API's numbers matching
-SQL exactly. The frontend side lives on the `hawker-ui` branch
-`analytics-integration`.
+Deployed. Runs on ECS Fargate on port 8080, behind API Gateway and an internal
+load balancer, at the public path `/insights`. The infrastructure is defined in
+the `hawkerflow-terraform` repository; release a change from there with
+`./scripts/release-service.sh analytics ../hawkerflow-service-analytics`. The
+hawker dashboard in `hawker-ui` reads its figures from this service.
 
-AWS deployment, Lambda packaging, Cognito and event-driven aggregation are
-deliberately out of scope — see [Deferred](#deferred).
+Verified request identity and event-driven aggregation are not built — see
+[Deferred](#deferred).
 
 ## The endpoint
 
@@ -89,8 +89,7 @@ and loses a cent against a till reconciliation. See
 `timestamp without time zone` holding UTC wall-clock, so a Singapore day runs
 from 16:00 UTC the previous day. See `src/analytics/time_window.py`.
 
-**`src/analytics/` is pure.** No FastAPI, no SQLAlchemy. A future Lambda adapter
-can call the same aggregation and time-window functions unchanged.
+**`src/analytics/` is pure.** No FastAPI, no SQLAlchemy.
 
 ## Schema dependency
 
@@ -102,10 +101,14 @@ selects; they are never passed to `create_all`.
 
 ## Security
 
-- Binds to loopback only. Not reachable from the network.
-- CORS grants exactly one origin, `http://localhost:4200`. GET only.
-- The runtime database role cannot INSERT, UPDATE, DELETE or CREATE TABLE.
-  Four tests in `tests/integration/test_readonly_role.py` assert each denial.
+- Binds to `0.0.0.0:8080` inside a private subnet; reachable only through the
+  internal load balancer.
+- CORS allows every origin, with the `X-Stall-ID` and `Content-Type` headers.
+- `X-Stall-ID` is not authentication: the API does not yet verify who is calling.
+- The service issues only SELECTs, but in AWS it connects with the database
+  master credentials. `scripts/create_readonly_role.sql` creates the SELECT-only
+  role it is designed for; four tests in
+  `tests/integration/test_readonly_role.py` assert that role's denials.
 - **`X-Stall-ID` is not authentication.** It is a local development convention;
   any client can set any value. It makes accidental cross-stall requests loud,
   nothing more. Production identity is deferred.
@@ -140,16 +143,11 @@ existing rows — repeated runs add another batch.
 
 ## Deferred
 
-AWS deployment, Lambda and API Gateway infrastructure, Cognito, event-driven
-aggregates, payment and shift schema changes, real diner checkout integration,
-production identity and production database networking.
+Verified request identity (Cognito tokens), a read-only database role in AWS,
+event-driven aggregates, and payment and shift schema changes.
 
-The organisation's `hawkerflow` umbrella repository contains an earlier
-DynamoDB-and-SQS analytics Lambda. It was not reused: it is the superseded
-architecture from before the team split into per-service repositories on FastAPI
-and PostgreSQL. One idea from it is worth keeping — it stored money as integer
-cents, which removes the rounding question entirely, and is the better answer if
-the order schema is ever migrated.
+Storing money as integer cents would remove the rounding question entirely, and
+is the better answer if the order schema is ever migrated.
 
 ## Integration
 

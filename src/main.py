@@ -24,7 +24,7 @@ class HawkerFlowAnalytics:
         self._init_app()
 
     def start(self):
-        """Starting point for the app. Binds to loopback only."""
+        """Starting point for the app. Binds to the host and port in config.yml."""
         uvicorn.run(
             self._app,
             host=self._config.service.host,
