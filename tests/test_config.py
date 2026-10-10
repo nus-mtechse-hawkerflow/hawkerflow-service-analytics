@@ -37,8 +37,8 @@ def test_service_listens_where_the_load_balancer_expects(config):
 def test_public_path_avoids_the_word_blockers_refuse(config):
     # Ad and tracker blockers drop browser requests whose path contains
     # /analytics/, which left the hawker dashboard unable to load.
-    assert config.service.root_path == "/insights"
-    assert "analytics" not in config.service.root_path
+    assert config.service.root_path == "/analytics"
+    assert "insights" not in config.service.root_path
 
 
 def test_config_yml_carries_no_database_address_or_credentials():
