@@ -15,10 +15,22 @@ from sqlalchemy.exc import ProgrammingError
 from configurations.app_config import AppConfig
 from session.db_session import DBSession
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(scope="module")
 def engine():
-    return DBSession(AppConfig().datasource).engine
+    try:
+        eng = DBSession(AppConfig().datasource).engine
+        with eng.connect():
+            pass
+        return eng
+    except Exception as exc:
+        pytest.skip(
+            f"PostgreSQL database is not reachable ({exc}). "
+            "These tests require the PostgreSQL container and the order service's tables. "
+            "See docs/RUN_LOCALLY.md."
+        )
 
 
 def test_readonly_role_can_select_orders(engine):

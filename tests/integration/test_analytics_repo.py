@@ -20,6 +20,8 @@ from session.db_session import DBSession
 SEED_STALL = 9001
 OTHER_STALL = 9002
 
+pytestmark = pytest.mark.integration
+
 # The fixture writer needs the setup role, which the runtime role is not.
 # Read it from the environment: no credential is committed, so the public
 # repository stays free of secrets and the gitleaks CI job stays green.
@@ -33,7 +35,19 @@ ADMIN_PORT = int(os.getenv("ANALYTICS_TEST_ADMIN_PORT", "5432"))
 
 @pytest.fixture(scope="module")
 def ro_engine():
-    return DBSession(AppConfig().datasource).engine
+    if not ADMIN_PASSWORD:
+        pytest.skip(
+            "ANALYTICS_TEST_ADMIN_PASSWORD is not set. These tests need the "
+            "setup role to seed rows, because the runtime role is read-only. "
+            "See docs/RUN_LOCALLY.md."
+        )
+    engine = DBSession(AppConfig().datasource).engine
+    try:
+        with engine.connect():
+            pass
+    except Exception as exc:
+        pytest.skip(f"PostgreSQL database is not reachable ({exc}). See docs/RUN_LOCALLY.md.")
+    return engine
 
 
 @pytest.fixture(scope="module")
@@ -46,7 +60,7 @@ def admin_engine():
             "See docs/RUN_LOCALLY.md."
         )
 
-    return create_engine(
+    engine = create_engine(
         URL.create(
             "postgresql+psycopg2",
             ADMIN_USER,
@@ -56,6 +70,12 @@ def admin_engine():
             ADMIN_DB,
         )
     )
+    try:
+        with engine.connect():
+            pass
+    except Exception as exc:
+        pytest.skip(f"PostgreSQL database is not reachable ({exc}). See docs/RUN_LOCALLY.md.")
+    return engine
 
 
 @pytest.fixture

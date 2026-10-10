@@ -1,6 +1,12 @@
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+markers = [
+  "integration: tests requiring a running PostgreSQL database",
+]
+filterwarnings = [
+  "ignore:.*Using `httpx` with `starlette.testclient` is deprecated.*:UserWarning",
+]
 
 [tool.ruff]
 line-length = 110
