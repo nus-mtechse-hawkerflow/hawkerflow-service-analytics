@@ -2,3 +2,13 @@
 pytest>=8.0
 httpx>=0.27
 ruff>=0.4
+fastapi==0.141.1
+uvicorn==0.52.4
+pydantic==2.13.5
+pydantic-settings==2.15.0
+PyYAML==6.0.3
+SQLAlchemy==2.0.53
+sqlmodel==0.0.42
+psycopg2-binary==2.9.13
+# Windows and slim Linux images ship no system tz database; zoneinfo needs this.
+tzdata==2026.4
