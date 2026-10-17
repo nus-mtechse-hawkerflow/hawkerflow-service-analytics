@@ -1,6 +1,8 @@
 service:
   title: HawkerFlow Service Analytics
-  # Not '/analytics': ad and tracker blockers refuse requests to that path
+  # Must match this service's API Gateway route prefix (the deployed gateway
+  # routes /analytics). Ad and tracker blockers may refuse paths containing
+  # /analytics/; hawkerflow-terraform's default prefix is /insights for that reason.
   root_path: '/analytics'
   port: 8080
   host: '0.0.0.0'
