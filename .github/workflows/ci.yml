@@ -201,15 +201,28 @@ jobs:
   # ------------------------------------------------------------------
   image:
     name: Build, scan & push image
+    environment: PROD
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: [quality, sast, sca, secrets]
     permissions:
       contents: read
+      id-token: write
       security-events: write
     env:
       LOCAL_IMAGE: hawkerflow-service:${{ github.sha }}
     steps:
+      - name: Login to AWS
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-session-name: hawkerflow-deploy-${{ github.run_id }}
+
+      - name: Login to ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2.1.7
+
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Build image
