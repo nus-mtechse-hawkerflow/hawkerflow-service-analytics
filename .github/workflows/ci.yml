@@ -207,6 +207,7 @@ jobs:
     needs: [quality, sast, sca, secrets]
     permissions:
       contents: read
+      id-token: write
       security-events: write
     env:
       LOCAL_IMAGE: hawkerflow-service:${{ github.sha }}
